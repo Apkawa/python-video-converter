@@ -7,6 +7,7 @@ import signal
 from subprocess import Popen, PIPE
 import logging
 import locale
+import tempfile
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +210,7 @@ class MediaStreamInfo(object):
 
         if self.type == 'audio':
             d = 'type=%s, codec=%s, channels=%d, rate=%.0f' % (self.type,
-                self.codec, self.audio_channels, self.audio_samplerate)
+                                                               self.codec, self.audio_channels, self.audio_samplerate)
         elif self.type == 'video':
             d = 'type=%s, codec=%s, width=%d, height=%d, fps=%.1f' % (
                 self.type, self.codec, self.video_width, self.video_height,
@@ -351,7 +352,7 @@ class FFMpeg(object):
     def _spawn(cmds):
         logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
         return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                     close_fds=True)
+            close_fds=True)
 
     def probe(self, fname, posters_as_video=True):
         """
@@ -416,7 +417,12 @@ class FFMpeg(object):
 
         """
         if not os.path.exists(infile):
-            raise FFMpegError("Input file doesn't exist: " + infile)
+            if not infile.startswith("concat:"):
+                raise FFMpegError("Input file doesn't exist: " + infile)
+            else:
+                for in_f in infile[len("concat:"):].strip('"').split("|"):
+                    if not os.path.exists(in_f):
+                        raise FFMpegError("Input file doesn't exist: %s in %s" % in_f, infile)
 
         cmds = [self.ffmpeg_path, '-i', infile]
         cmds.extend(opts)
@@ -486,16 +492,16 @@ class FFMpeg(object):
             if line.startswith(infile + ': '):
                 err = line[len(infile) + 2:]
                 raise FFMpegConvertError('Encoding error', cmd, total_output,
-                                         err, pid=p.pid)
+                    err, pid=p.pid)
             if line.startswith('Error while '):
                 raise FFMpegConvertError('Encoding error', cmd, total_output,
-                                         line, pid=p.pid)
+                    line, pid=p.pid)
             if not yielded:
                 raise FFMpegConvertError('Unknown ffmpeg error', cmd,
-                                         total_output, line, pid=p.pid)
+                    total_output, line, pid=p.pid)
         if p.returncode != 0:
             raise FFMpegConvertError('Exited with code %d' % p.returncode, cmd,
-                                     total_output, pid=p.pid)
+                total_output, pid=p.pid)
 
     def thumbnail(self, fname, time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY):
         """
@@ -541,3 +547,37 @@ class FFMpeg(object):
         stderr_data.decode(console_encoding)
         if any(not os.path.exists(option[1]) for option in option_list):
             raise FFMpegError('Error creating thumbnail: %s' % stderr_data)
+
+
+    def concat(self, infiles, outfile, opts, timeout=10, temp_dir=None):
+        '''
+        http://www.ffmpeg.org/faq.html#How-can-I-join-video-files_003f
+        '''
+        temp_files = []
+        try:
+            converted_files = []
+            for in_file in infiles:
+                fd, tmp_outfile = tempfile.mkstemp(suffix=".mpg", dir=temp_dir)
+                for c in self.convert(in_file, tmp_outfile, opts=['-qscale:v', '1'], timeout=timeout):
+                    pass
+                converted_files.append(tmp_outfile)
+                temp_files.append(tmp_outfile)
+
+            in_file_concat = 'concat:%s' % "|".join(converted_files)
+
+            fd, in_out_file = tempfile.mkstemp(suffix=".mpg", dir=temp_dir)
+            temp_files.append(in_out_file)
+
+            for c in self.convert(in_file_concat, in_out_file, ['-c', 'copy'], timeout=timeout):
+                pass
+
+            for c in self.convert(in_out_file, outfile, opts, timeout=timeout):
+                yield c
+        finally:
+            for t in temp_files:
+                os.unlink(t)
+
+
+
+
+

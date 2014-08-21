@@ -67,7 +67,7 @@ class TestFFMpeg(unittest.TestCase):
 
     def test_ffmpeg_probe(self):
         self.assertRaisesSpecific(ffmpeg.FFMpegError, ffmpeg.FFMpeg,
-                                  ffmpeg_path='/foo', ffprobe_path='/bar')
+            ffmpeg_path='/foo', ffprobe_path='/bar')
 
         f = ffmpeg.FFMpeg()
 
@@ -112,10 +112,10 @@ class TestFFMpeg(unittest.TestCase):
             return list(fn(*args, **kwargs))
 
         self.assertRaisesSpecific(ffmpeg.FFMpegError, consume,
-                                  f.convert, 'nonexistent', self.video_file_path, [])
+            f.convert, 'nonexistent', self.video_file_path, [])
 
         self.assertRaisesSpecific(ffmpeg.FFMpegConvertError, consume,
-                                  f.convert, '/etc/passwd', self.video_file_path, [])
+            f.convert, '/etc/passwd', self.video_file_path, [])
 
         info = f.probe('test1.ogg')
 
@@ -210,138 +210,82 @@ class TestFFMpeg(unittest.TestCase):
         c.ffmpeg_codec_name = 'doctest'
 
         self.assertEqual(['-acodec', 'doctest'],
-                         c.parse_options({'codec': 'doctest', 'channels': 0, 'bitrate': 0, 'samplerate': 0}))
+            c.parse_options({'codec': 'doctest', 'channels': 0, 'bitrate': 0, 'samplerate': 0}))
 
         self.assertEqual(['-acodec', 'doctest', '-ac', '1', '-ab', '64k', '-ar', '44100'],
-                         c.parse_options({'codec': 'doctest', 'channels': '1', 'bitrate': '64', 'samplerate': '44100'}))
+            c.parse_options({'codec': 'doctest', 'channels': '1', 'bitrate': '64', 'samplerate': '44100'}))
 
         c = avcodecs.VideoCodec()
         c.codec_name = 'doctest'
         c.ffmpeg_codec_name = 'doctest'
 
         self.assertEqual(['-vcodec', 'doctest'],
-                         c.parse_options({'codec': 'doctest', 'fps': 0, 'bitrate': 0, 'width': 0, 'height': '480'}))
+            c.parse_options({'codec': 'doctest', 'fps': 0, 'bitrate': 0, 'width': 0, 'height': '480'}))
 
         self.assertEqual(['-vcodec', 'doctest', '-r', '25', '-vb', '300k', '-s', '320x240', '-aspect', '320:240'],
-                         c.parse_options(
-                             {'codec': 'doctest', 'fps': '25', 'bitrate': '300', 'width': 320, 'height': 240}))
+            c.parse_options(
+                {'codec': 'doctest', 'fps': '25', 'bitrate': '300', 'width': 320, 'height': 240}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '384x240', '-aspect', '320:240', '-vf', 'crop=320:240:32:0'],
-                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'crop',
-                                          'width': 320, 'height': 240}))
+            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'crop',
+                             'width': 320, 'height': 240}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '320x240', '-aspect', '320:200', '-vf', 'crop=320:200:0:20'],
-                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'crop',
-                                          'width': 320, 'height': 200}))
+            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'crop',
+                             'width': 320, 'height': 200}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '320x200', '-aspect', '320:240', '-vf', 'pad=320:240:0:20'],
-                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'pad',
-                                          'width': 320, 'height': 240}))
+            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'pad',
+                             'width': 320, 'height': 240}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '266x200', '-aspect', '320:200', '-vf', 'pad=320:200:27:0'],
-                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'pad',
-                                          'width': 320, 'height': 200}))
+            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'pad',
+                             'width': 320, 'height': 200}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '320x240'],
-                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'width': 320}))
+            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'width': 320}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '320x240'],
-                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'height': 240}))
+            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'height': 240}))
 
-    def test_converter(self):
-        c = Converter()
+    def test_ffmpeg_concat(self):
+        f = ffmpeg.FFMpeg()
 
-        self.assertRaisesSpecific(ConverterError, c.parse_options, None)
-        self.assertRaisesSpecific(ConverterError, c.parse_options, {})
-        self.assertRaisesSpecific(ConverterError, c.parse_options, {'format': 'foo'})
+        def consume(fn, *args, **kwargs):
+            return list(fn(*args, **kwargs))
 
-        self.assertRaisesSpecific(ConverterError, c.parse_options, {'format': 'ogg'})
-        self.assertRaisesSpecific(ConverterError, c.parse_options, {'format': 'ogg', 'video': 'whatever'})
-        self.assertRaisesSpecific(ConverterError, c.parse_options, {'format': 'ogg', 'audio': {}})
-        self.assertRaisesSpecific(ConverterError, c.parse_options,
-                                  {'format': 'ogg', 'audio': {'codec': 'bogus'}})
+        info = f.probe('test1.ogg')
 
-        self.assertEqual(['-an', '-vcodec', 'libtheora', '-r', '25', '-sn', '-f', 'ogg'],
-                         c.parse_options({'format': 'ogg', 'video': {'codec': 'theora', 'fps': 25}}))
-        self.assertEqual(['-acodec', 'copy', '-vcodec', 'copy', '-sn', '-f', 'ogg'],
-                         c.parse_options({'format': 'ogg', 'audio': {'codec': 'copy'}, 'video': {'codec': 'copy'}, 'subtitle': {'codec': None}}))
+        convert_options = [
+            '-acodec', 'libvorbis', '-ab', '16k', '-ac', '1', '-ar', '11025',
+            '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k']
+        temp_dir = self.temp_dir
+        conv = f.concat(['test1.ogg', "test1.ogg"], self.video_file_path, convert_options,
+            temp_dir=temp_dir)
 
-        info = c.probe('test1.ogg')
+        last_tc = 0.0
+        for tc in conv:
+            assert (last_tc < tc <= info.format.duration * 2 + 0.1), (last_tc, tc, info.format.duration * 2)
+
+        f = ffmpeg.FFMpeg()
+        info = f.probe(self.video_file_path)
+        self.assertEqual('ogg', info.format.format)
+        self.assertAlmostEqual(33.00 * 2, info.format.duration, places=0)
+        self.assertEqual(2, len(info.streams))
+
+        self.assertEqual('video', info.video.type)
         self.assertEqual('theora', info.video.codec)
-        self.assertEqual(720, info.video.video_width)
-        self.assertEqual(400, info.video.video_height)
+        self.assertEqual(360, info.video.video_width)
+        self.assertEqual(200, info.video.video_height)
+        self.assertAlmostEqual(15.00, info.video.video_fps, places=2)
 
-        f = self.shot_file_path
+        self.assertEqual('audio', info.audio.type)
+        self.assertEqual('vorbis', info.audio.codec)
+        self.assertEqual(1, info.audio.audio_channels)
+        self.assertEqual(11025, info.audio.audio_samplerate)
 
-        self.ensure_notexist(f)
-        c.thumbnail('test1.ogg', 10, f)
-        self.assertTrue(os.path.exists(f))
-        os.unlink(f)
+        self.assertEqual(len(os.listdir(temp_dir)), 1)
 
-        conv = c.convert('test1.ogg', self.video_file_path, {
-            'format': 'ogg',
-            'video': {
-                'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300},
-            'audio': {
-                'codec': 'vorbis', 'channels': 1, 'bitrate': 32}
-        })
-
-        self.assertTrue(verify_progress(conv))
-
-        conv = c.convert('test.aac', self.audio_file_path, {
-            'format': 'mp3',
-            'audio': {
-                'codec': 'mp3', 'channels': 1, 'bitrate': 32}
-        })
-
-        self.assertTrue(verify_progress(conv))
-
-    def test_converter_2pass(self):
-        c = Converter()
-        self.video_file_path = 'xx.ogg'
-        options = {
-            'format': 'ogg',
-            'audio': {'codec': 'vorbis', 'samplerate': 11025, 'channels': 1, 'bitrate': 16},
-            'video': {'codec': 'theora', 'bitrate': 128, 'width': 360, 'height': 200, 'fps': 15}
-        }
-        options_repr = repr(options)
-        conv = c.convert('test1.ogg', self.video_file_path, options, twopass=True)
-
-        verify_progress(conv)
-
-        # Convert should not change options dict
-        self.assertEqual(options_repr, repr(options))
-
-        self._assert_converted_video_file()
-
-    def test_converter_vp8_codec(self):
-        c = Converter()
-        conv = c.convert('test1.ogg', self.video_file_path, {
-            'format': 'webm',
-            'video': {
-                'codec': 'vp8', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300},
-            'audio': {
-                'codec': 'vorbis', 'channels': 1, 'bitrate': 32}
-        })
-
-        self.assertTrue(verify_progress(conv))
-
-    def test_probe_audio_poster(self):
-        c = Converter()
-
-        info = c.probe('test.mp3', posters_as_video=True)
-        self.assertNotEqual(None, info.video)
-        self.assertEqual(info.video.attached_pic, 1)
-
-        info = c.probe('test.mp3', posters_as_video=False)
-        self.assertEqual(None, info.video)
-        self.assertEqual(len(info.posters), 1)
-        poster = info.posters[0]
-        self.assertEqual(poster.type, 'video')
-        self.assertEqual(poster.codec, 'png')
-        self.assertEqual(poster.video_width, 32)
-        self.assertEqual(poster.video_height, 32)
-        self.assertEqual(poster.attached_pic, 1)
 
 
 if __name__ == '__main__':

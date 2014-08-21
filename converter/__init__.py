@@ -132,6 +132,22 @@ class Converter(object):
 
         return optlist
 
+    def _probe_or_raise(self, infile):
+        if not os.path.exists(infile):
+            raise ConverterError("Source file doesn't exist: " + infile)
+
+        info = self.ffmpeg.probe(infile)
+        if info is None:
+            raise ConverterError("Can't get information about source file")
+
+        if not info.video and not info.audio:
+            raise ConverterError('Source file has no audio or video streams')
+
+        if info.format.duration < 0.01:
+            raise ConverterError('Zero-length media')
+
+        return info
+
     def convert(self, infile, outfile, options, twopass=False, timeout=10):
         """
         Convert media file (infile) according to specified options, and
@@ -175,18 +191,7 @@ class Converter(object):
         ...   pass # can be used to inform the user about the progress
         """
 
-        if not isinstance(options, dict):
-            raise ConverterError('Invalid options')
-
-        if not os.path.exists(infile):
-            raise ConverterError("Source file doesn't exist: " + infile)
-
-        info = self.ffmpeg.probe(infile)
-        if info is None:
-            raise ConverterError("Can't get information about source file")
-
-        if not info.video and not info.audio:
-            raise ConverterError('Source file has no audio or video streams')
+        info = self._probe_or_raise(infile)
 
         if info.video and 'video' in options:
             options = options.copy()
@@ -194,8 +199,8 @@ class Converter(object):
             v['src_width'] = info.video.video_width
             v['src_height'] = info.video.video_height
 
-        if info.format.duration < 0.01:
-            raise ConverterError('Zero-length media')
+        if not isinstance(options, dict):
+            raise ConverterError('Invalid options')
 
         if twopass:
             optlist1 = self.parse_options(options, 1)
@@ -212,6 +217,30 @@ class Converter(object):
             for timecode in self.ffmpeg.convert(infile, outfile, optlist,
                                                 timeout=timeout):
                 yield int((100.0 * timecode) / info.format.duration)
+
+    def concat(self, infiles, outfile, options, timeout=10, temp_dir=None):
+        '''
+
+        >>> conv = Converter().concat(['test1.ogg', 'test1.ogg'], '/tmp/output.mkv', {
+        ...    'format': 'mkv',
+        ...    'audio': { 'codec': 'aac' },
+        ...    'video': { 'codec': 'h264' }
+        ... })
+
+        >>> for timecode in conv:
+        ...   pass # can be used to inform the user about the progress
+        '''
+        if not isinstance(options, dict):
+            raise ConverterError('Invalid options')
+
+        info_list = map(self._probe_or_raise, infiles)
+        result_duration = sum([i.format.duration for i in info_list])
+
+        optlist = self.parse_options(options, None)
+        for timecode in self.ffmpeg.concat(infiles, outfile, optlist,
+                timeout=timeout, temp_dir=temp_dir):
+            yield int((100.0 * timecode) / result_duration)
+
 
     def probe(self, fname, posters_as_video=True):
         """
