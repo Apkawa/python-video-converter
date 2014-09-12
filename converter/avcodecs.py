@@ -175,6 +175,12 @@ class VideoCodec(BaseCodec):
         'mode': str,
         'src_width': int,
         'src_height': int,
+
+        'hue': float,
+        'saturation': float,
+        'gamma': float,
+        'contrast': float,
+        'brightness': float,
     }
 
     def _aspect_corrections(self, sw, sh, w, h, mode):
@@ -239,6 +245,7 @@ class VideoCodec(BaseCodec):
         super(VideoCodec, self).parse_options(opt)
 
         safe = self.safe_options(opt)
+        filters_list = []
 
         if 'fps' in safe:
             f = safe['fps']
@@ -305,7 +312,26 @@ class VideoCodec(BaseCodec):
             if ow and oh:
                 optlist.extend(['-aspect', '%d:%d' % (ow, oh)])
 
-        if filters:
+        if any(n in safe for n in ('gamma', 'contrast', 'brightness')):
+            gamma = safe.get('gamma', 1.)
+            contrast = safe.get('contrast', 1.)
+            brightness = safe.get('brightness', 0.)
+
+            filters_list.append(
+                'mp=eq2=%.2f:%.2f:%.2f:1:1:1:1:1' % (gamma, contrast,
+                                                     brightness))
+
+        if any(n in safe for n in ('hue', 'saturation')):
+            hue = safe.get('hue', 0.)
+            saturation = safe.get('saturation', 0.)
+            filters_list.append(
+                'hue=h=%.1f:s=%.2f' % (hue, saturation))
+
+        if filters or filters_list:
+            extra_filters = ','.join(filters_list)
+            if extra_filters:
+                filters = extra_filters if not filters else \
+                    filters + ',' + extra_filters
             optlist.extend(['-vf', filters])
 
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
@@ -372,6 +398,7 @@ class SubtitleCopyCodec(BaseCodec):
 
     def parse_options(self, opt):
         return ['-scodec', 'copy']
+
 
 # Audio Codecs
 class VorbisCodec(AudioCodec):
@@ -579,6 +606,21 @@ class Mpeg2Codec(MpegCodec):
     ffmpeg_codec_name = 'mpeg2video'
 
 
+class MjpegCodec(VideoCodec):
+    codec_name = 'mjpeg'
+    ffmpeg_codec_name = 'mjpeg'
+
+
+class Jpeg2000Codec(VideoCodec):
+    codec_name = 'jpeg2000'
+    ffmpeg_codec_name = 'jpeg2000'
+
+
+class PngCodec(VideoCodec):
+    codec_name = 'png'
+    ffmpeg_codec_name = 'png'
+
+
 # Subtitle Codecs
 class MOVTextCodec(SubtitleCodec):
     """
@@ -628,7 +670,7 @@ audio_codec_list = [
 video_codec_list = [
     VideoNullCodec, VideoCopyCodec, TheoraCodec, H264Codec,
     DivxCodec, Vp8Codec, H263Codec, FlvCodec, Mpeg1Codec,
-    Mpeg2Codec
+    Mpeg2Codec, MjpegCodec, Jpeg2000Codec, PngCodec
 ]
 
 subtitle_codec_list = [

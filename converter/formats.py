@@ -92,7 +92,12 @@ class Mp3Format(BaseFormat):
     ffmpeg_format_name = 'mp3'
 
 
+class Image2Format(BaseFormat):
+    format_name = 'image2'
+    ffmpeg_format_name = 'image2'
+
+
 format_list = [
     OggFormat, AviFormat, MkvFormat, WebmFormat, FlvFormat,
-    MovFormat, Mp4Format, MpegFormat, Mp3Format
+    MovFormat, Mp4Format, MpegFormat, Mp3Format, Image2Format
 ]
