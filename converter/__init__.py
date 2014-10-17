@@ -233,10 +233,19 @@ class Converter(object):
         if not isinstance(options, dict):
             raise ConverterError('Invalid options')
 
-        info_list = map(self._probe_or_raise, infiles)
+        info_list = []
+        for in_file in infiles:
+            if isinstance(in_file, (list, tuple)):
+                in_file, opts = in_file
+
+            info_list.append(self._probe_or_raise(in_file))
+
         result_duration = sum([i.format.duration for i in info_list])
 
         optlist = self.parse_options(options, None)
+
+
+
         for timecode in self.ffmpeg.concat(infiles, outfile, optlist,
                 timeout=timeout, temp_dir=temp_dir):
             yield int((100.0 * timecode) / result_duration)

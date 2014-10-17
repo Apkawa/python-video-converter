@@ -309,6 +309,8 @@ class VideoCodec(BaseCodec):
             optlist.extend(['-vf', filters])
 
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
+
+        optlist.extend(opt.get("raw_params") or [])
         return optlist
 
 

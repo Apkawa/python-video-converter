@@ -558,7 +558,13 @@ class FFMpeg(object):
             converted_files = []
             for in_file in infiles:
                 fd, tmp_outfile = tempfile.mkstemp(suffix=".mpg", dir=temp_dir)
-                for c in self.convert(in_file, tmp_outfile, opts=['-qscale:v', '1'], timeout=timeout):
+                sub_opts = ['-qscale:v', '1']
+                if isinstance(in_file, (list, tuple)):
+                    sub_opts.extend(in_file[1])
+                    in_file = in_file[0]
+
+
+                for c in self.convert(in_file, tmp_outfile, opts=sub_opts, timeout=timeout):
                     pass
                 converted_files.append(tmp_outfile)
                 temp_files.append(tmp_outfile)
@@ -573,6 +579,7 @@ class FFMpeg(object):
 
             for c in self.convert(in_out_file, outfile, opts, timeout=timeout):
                 yield c
+
         finally:
             for t in temp_files:
                 os.unlink(t)

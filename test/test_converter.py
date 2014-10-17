@@ -274,6 +274,32 @@ class TestFFMpeg(unittest.TestCase):
 
         self.assertTrue(verify_progress(conv))
 
+    def test_concat_with_option_per_file(self):
+        c = Converter()
+        conv = c.concat([('test1.ogg', ['-vf', 'transpose=2']), ("test1.ogg", ["-ss", "00:00:05", "-to", "00:00:25"])], self.video_file_path, {
+            'format': 'ogg',
+            'video': {
+                'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300},
+            'audio': {
+                'codec': 'vorbis', 'channels': 1, 'bitrate': 32}
+        }, temp_dir=self.temp_dir)
+
+        self.assertTrue(verify_progress(conv))
+        pass
+
+    def test_convert_with_additional_option(self):
+        c = Converter()
+        conv = c.convert('test1.ogg', self.video_file_path, {
+            'format': 'ogg',
+            'video': {
+                'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300},
+            'audio': {
+                'codec': 'vorbis', 'channels': 1, 'bitrate': 32}
+        })
+
+        self.assertTrue(verify_progress(conv))
+
+
 
 if __name__ == '__main__':
     unittest.main()
