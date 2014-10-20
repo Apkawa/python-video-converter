@@ -130,7 +130,7 @@ class Converter(object):
         elif twopass == 2:
             optlist.extend(['-pass', '2'])
 
-        return optlist
+        return map(str, optlist)
 
     def _probe_or_raise(self, infile):
         if not os.path.exists(infile):
