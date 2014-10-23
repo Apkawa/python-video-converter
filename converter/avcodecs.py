@@ -622,6 +622,9 @@ class PngCodec(VideoCodec):
     codec_name = 'png'
     ffmpeg_codec_name = 'png'
 
+class TiffCodec(VideoCodec):
+    codec_name = 'tiff'
+    ffmpeg_codec_name = 'tiff'
 
 # Subtitle Codecs
 class MOVTextCodec(SubtitleCodec):
@@ -672,7 +675,7 @@ audio_codec_list = [
 video_codec_list = [
     VideoNullCodec, VideoCopyCodec, TheoraCodec, H264Codec,
     DivxCodec, Vp8Codec, H263Codec, FlvCodec, Mpeg1Codec,
-    Mpeg2Codec, MjpegCodec, Jpeg2000Codec, PngCodec
+    Mpeg2Codec, MjpegCodec, Jpeg2000Codec, PngCodec, TiffCodec
 ]
 
 subtitle_codec_list = [
