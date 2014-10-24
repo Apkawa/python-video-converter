@@ -354,7 +354,7 @@ class VideoCodec(BaseCodec):
 
         if "unsharp" in safe:
             filters_list.append(
-                "unsharpmask=%s" % ":".join("%s=%s" % p for p in safe["unsharp"].items())
+                "unsharp=%s" % ":".join("%s=%s" % p for p in safe["unsharp"].items())
             )
 
 
