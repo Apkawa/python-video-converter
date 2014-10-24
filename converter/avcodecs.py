@@ -137,6 +137,30 @@ class SubtitleCodec(BaseCodec):
         return optlist
 
 
+def unsharpmask_type(value):
+    #https://www.ffmpeg.org/ffmpeg-filters.html#unsharp-1
+
+    clean_value = {
+        'luma_msize_x': 5,
+        'luma_msize_y': 5,
+        'luma_amount': 1,
+        }
+
+    if isinstance(value, float):
+        clean_value['luma_amount'] = value
+        return clean_value
+
+    if not isinstance(value, dict):
+        raise ValueError("not is dict!")
+
+
+    for key in clean_value:
+        if key in value:
+            clean_value[key] = value[key]
+    return clean_value
+
+
+
 class VideoCodec(BaseCodec):
     """
     Base video codec class handles general video options. Possible
@@ -181,6 +205,7 @@ class VideoCodec(BaseCodec):
         'gamma': float,
         'contrast': float,
         'brightness': float,
+        'unsharp': unsharpmask_type,
     }
 
     def _aspect_corrections(self, sw, sh, w, h, mode):
@@ -327,6 +352,12 @@ class VideoCodec(BaseCodec):
             filters_list.append(
                 'hue=h=%.1f:s=%.2f' % (hue, saturation))
 
+        if "unsharp" in safe:
+            filters_list.append(
+                "unsharpmask=%s" % ":".join("%s=%s" % p for p in safe["unsharp"].items())
+            )
+
+
         if filters or filters_list:
             extra_filters = ','.join(filters_list)
             if extra_filters:
@@ -336,7 +367,8 @@ class VideoCodec(BaseCodec):
 
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
 
-        optlist.extend(opt.get("raw_params") or [])
+        optlist.extend(opt.get("extra_params") or [])
+
         return optlist
 
 
