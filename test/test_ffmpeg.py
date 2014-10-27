@@ -287,6 +287,19 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(len(os.listdir(temp_dir)), 1)
 
 
+    def test_ffmpeg_lavfi(self):
+        convert_options = [
+            '-f', 'lavfi'
+        ]
+        f = ffmpeg.FFMpeg()
+
+        temp_dir = self.temp_dir
+        conv = f.run_ffmpeg("color=c=white:s=320x240:d=10", self.video_file_path, convert_options)
+        for c in conv:
+            pass
+
+        info = f.probe(self.video_file_path)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -348,83 +348,9 @@ class FFMpeg(object):
         if not os.path.exists(self.ffprobe_path):
             raise FFMpegError("ffprobe binary not found: " + self.ffprobe_path)
 
-    @staticmethod
-    def _spawn(cmds):
-        logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
-        return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-            close_fds=True)
-
-    def probe(self, fname, posters_as_video=True):
-        """
-        Examine the media file and determine its format and media streams.
-        Returns the MediaInfo object, or None if the specified file is
-        not a valid media file.
-
-        >>> info = FFMpeg().probe('test1.ogg')
-        >>> info.format
-        'ogg'
-        >>> info.duration
-        33.00
-        >>> info.video.codec
-        'theora'
-        >>> info.video.width
-        720
-        >>> info.video.height
-        400
-        >>> info.audio.codec
-        'vorbis'
-        >>> info.audio.channels
-        2
-        :param posters_as_video: Take poster images (mainly for audio files) as
-            A video stream, defaults to True
-        """
-
-        if not os.path.exists(fname):
-            return None
-
-        info = MediaInfo(posters_as_video)
-
-        p = self._spawn([self.ffprobe_path,
-                         '-show_format', '-show_streams', fname])
-        stdout_data, _ = p.communicate()
-        stdout_data = stdout_data.decode(console_encoding)
-        info.parse_ffprobe(stdout_data)
-
-        if not info.format.format and len(info.streams) == 0:
-            return None
-
-        return info
-
-    def convert(self, infile, outfile, opts, timeout=10):
-        """
-        Convert the source media (infile) according to specified options
-        (a list of ffmpeg switches as strings) and save it to outfile.
-
-        Convert returns a generator that needs to be iterated to drive the
-        conversion process. The generator will periodically yield timecode
-        of currently processed part of the file (ie. at which second in the
-        content is the conversion process currently).
-
-        The optional timeout argument specifies how long should the operation
-        be blocked in case ffmpeg gets stuck and doesn't report back. See
-        the documentation in Converter.convert() for more details about this
-        option.
-
-        >>> conv = FFMpeg().convert('test.ogg', '/tmp/output.mp3',
-        ...    ['-acodec libmp3lame', '-vn'])
-        >>> for timecode in conv:
-        ...    pass # can be used to inform the user about conversion progress
-
-        """
-        if not os.path.exists(infile):
-            if not infile.startswith("concat:"):
-                raise FFMpegError("Input file doesn't exist: " + infile)
-            else:
-                for in_f in infile[len("concat:"):].strip('"').split("|"):
-                    if not os.path.exists(in_f):
-                        raise FFMpegError("Input file doesn't exist: %s in %s" % in_f, infile)
-
-        cmds = [self.ffmpeg_path, '-i', infile]
+    def run_ffmpeg(self, infile, outfile, opts, prefix_opts=None, timeout=10):
+        cmds = [self.ffmpeg_path]
+        cmds.extend(['-i', infile])
         cmds.extend(opts)
         cmds.extend(['-y', outfile])
 
@@ -502,6 +428,85 @@ class FFMpeg(object):
         if p.returncode != 0:
             raise FFMpegConvertError('Exited with code %d' % p.returncode, cmd,
                 total_output, pid=p.pid)
+
+    @staticmethod
+    def _spawn(cmds):
+        logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
+        return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+            close_fds=True)
+
+    def probe(self, fname, posters_as_video=True):
+        """
+        Examine the media file and determine its format and media streams.
+        Returns the MediaInfo object, or None if the specified file is
+        not a valid media file.
+
+        >>> info = FFMpeg().probe('test1.ogg')
+        >>> info.format
+        'ogg'
+        >>> info.duration
+        33.00
+        >>> info.video.codec
+        'theora'
+        >>> info.video.width
+        720
+        >>> info.video.height
+        400
+        >>> info.audio.codec
+        'vorbis'
+        >>> info.audio.channels
+        2
+        :param posters_as_video: Take poster images (mainly for audio files) as
+            A video stream, defaults to True
+        """
+
+        if not os.path.exists(fname):
+            return None
+
+        info = MediaInfo(posters_as_video)
+
+        p = self._spawn([self.ffprobe_path,
+                         '-show_format', '-show_streams', fname])
+        stdout_data, _ = p.communicate()
+        stdout_data = stdout_data.decode(console_encoding)
+        info.parse_ffprobe(stdout_data)
+
+        if not info.format.format and len(info.streams) == 0:
+            return None
+
+        return info
+
+
+    def convert(self, infile, outfile, opts, timeout=10):
+        """
+        Convert the source media (infile) according to specified options
+        (a list of ffmpeg switches as strings) and save it to outfile.
+
+        Convert returns a generator that needs to be iterated to drive the
+        conversion process. The generator will periodically yield timecode
+        of currently processed part of the file (ie. at which second in the
+        content is the conversion process currently).
+
+        The optional timeout argument specifies how long should the operation
+        be blocked in case ffmpeg gets stuck and doesn't report back. See
+        the documentation in Converter.convert() for more details about this
+        option.
+
+        >>> conv = FFMpeg().convert('test.ogg', '/tmp/output.mp3',
+        ...    ['-acodec libmp3lame', '-vn'])
+        >>> for timecode in conv:
+        ...    pass # can be used to inform the user about conversion progress
+
+        """
+        if not os.path.exists(infile):
+            if not infile.startswith("concat:"):
+                raise FFMpegError("Input file doesn't exist: " + infile)
+            else:
+                for in_f in infile[len("concat:"):].strip('"').split("|"):
+                    if not os.path.exists(in_f):
+                        raise FFMpegError("Input fil"
+                                          "e doesn't exist: %s in %s" % in_f, infile)
+        return self.run_ffmpeg(infile, outfile, opts)
 
     def thumbnail(self, fname, time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY):
         """

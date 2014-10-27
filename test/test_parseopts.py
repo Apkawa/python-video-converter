@@ -35,7 +35,7 @@ class TestParseOpts(unittest.TestCase):
                 "unsharp": 1.0
             }
         }), ['-an', '-vcodec', 'libx264', '-vf',
-             'unsharpmask=luma_amount=1.0:luma_msize_y=5:luma_msize_x=5',
+             'unsharp=luma_amount=1.0:luma_msize_y=5:luma_msize_x=5',
              '-sn', '-f', 'avi'] )
 
 
