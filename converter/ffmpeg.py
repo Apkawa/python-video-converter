@@ -274,6 +274,10 @@ class MediaInfo(object):
                     current_stream.parse_ffprobe(k, v)
                 elif in_format:
                     self.format.parse_ffprobe(k, v)
+        if self.format.format == 'png_pipe':
+            # Bug workground around png_pipe
+            self.format.duration = 0.04
+            self.format.bitrate = 66878800.0
 
     def __repr__(self):
         return 'MediaInfo(format=%s, streams=%s)' % (repr(self.format),

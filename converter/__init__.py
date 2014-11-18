@@ -143,7 +143,7 @@ class Converter(object):
         if not info.video and not info.audio:
             raise ConverterError('Source file has no audio or video streams')
 
-        if info.format.duration < 0.01:
+        if info.format.duration < 0.01 and info.video.codec != 'png':
             raise ConverterError('Zero-length media')
 
         return info

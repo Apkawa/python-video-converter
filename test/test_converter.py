@@ -276,13 +276,14 @@ class TestFFMpeg(unittest.TestCase):
 
     def test_concat_with_option_per_file(self):
         c = Converter()
-        conv = c.concat([('test1.ogg', ['-vf', 'transpose=2']), ("test1.ogg", ["-ss", "00:00:05", "-to", "00:00:25"])], self.video_file_path, {
-            'format': 'ogg',
-            'video': {
-                'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300},
-            'audio': {
-                'codec': 'vorbis', 'channels': 1, 'bitrate': 32}
-        }, temp_dir=self.temp_dir)
+        conv = c.concat([('test1.ogg', ['-vf', 'transpose=2']), ("test1.ogg", ["-ss", "00:00:05", "-to", "00:00:25"])],
+            self.video_file_path, {
+                'format': 'ogg',
+                'video': {
+                    'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300},
+                'audio': {
+                    'codec': 'vorbis', 'channels': 1, 'bitrate': 32}
+            }, temp_dir=self.temp_dir)
 
         self.assertTrue(verify_progress(conv))
         pass
@@ -299,7 +300,33 @@ class TestFFMpeg(unittest.TestCase):
 
         self.assertTrue(verify_progress(conv))
 
+    def test_probe_image(self):
+        c = Converter()
 
+        info = c.probe('test.png', posters_as_video=True)
+        self.assertEqual(info.video.codec, 'png')
+
+        info = c.probe('test.jpg', posters_as_video=False)
+        self.assertEqual(info.video.codec, 'mjpeg')
+
+    def test_color_correction(self):
+        c = Converter()
+
+        i = c.convert('test.png', '/tmp/test.png',
+            options={
+                'format': 'image2',
+                'video': {
+                    'codec': 'png',
+                    'brightness': 0.,
+                    'contrast': 1.0,
+                    'hue': 0,
+                    'saturation': 1.0,
+                    'unsharp': 0.0,
+                }
+            }
+        )
+
+        list(i)
 
 if __name__ == '__main__':
     unittest.main()
