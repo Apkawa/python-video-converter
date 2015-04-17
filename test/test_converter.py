@@ -309,6 +309,25 @@ class TestFFMpeg(unittest.TestCase):
         info = c.probe('test.jpg', posters_as_video=False)
         self.assertEqual(info.video.codec, 'mjpeg')
 
+    def test_add_audio(self):
+        c = Converter()
+        i = c.convert('test1.ogg', '/tmp/audio.ogg',
+            options={
+                'format': 'mov',
+                'params': ['-i', 'test.mp3', '-map', '0:0', '-map', '1'],
+                'video': {
+                    'codec': 'copy',
+                },
+                'audio': {
+                    'codec': 'mp3',
+                    'bitrate': 128 * 1024,
+                    'channels': 1,
+                }
+            }
+        )
+        list(i)
+
+
     def test_color_correction(self):
         c = Converter()
 
@@ -327,6 +346,7 @@ class TestFFMpeg(unittest.TestCase):
         )
 
         list(i)
+
 
 if __name__ == '__main__':
     unittest.main()

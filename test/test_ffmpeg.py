@@ -301,5 +301,23 @@ class TestFFMpeg(unittest.TestCase):
         info = f.probe(self.video_file_path)
 
 
+    def test_handle_error(self):
+        f = ffmpeg.FFMpeg()
+        convert_options = [
+            '-f', 'lavfi'
+        ]
+
+        temp_dir = self.temp_dir
+        conv = f.run_ffmpeg("color=c=white:s=320x240:d=10", self.video_file_path, convert_options)
+        try:
+            for c in conv:
+                pass
+        except Exception as e:
+            pass
+
+        info = f.probe(self.video_file_path)
+
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -365,6 +365,7 @@ class FFMpeg(object):
 
             signal.signal(signal.SIGALRM, on_sigalrm)
 
+        print cmds
         try:
             p = self._spawn(cmds)
         except OSError:
@@ -386,7 +387,6 @@ class FFMpeg(object):
             if not ret:
                 break
 
-            ret = ret.decode(console_encoding)
             total_output += ret
             buf += ret
             if '\r' in buf:
@@ -412,6 +412,7 @@ class FFMpeg(object):
         if total_output == '':
             raise FFMpegError('Error while calling ffmpeg binary')
 
+        total_output = total_output.decode(console_encoding)
         cmd = ' '.join(cmds)
         if '\n' in total_output:
             line = total_output.split('\n')[-2]

@@ -121,9 +121,10 @@ class Converter(object):
             else:
                 format_options.extend(['-map', str(m)])
 
+        generic_options = opt.get('params') or []
 
         # aggregate all options
-        optlist = audio_options + video_options + subtitle_options + format_options
+        optlist = generic_options + audio_options + video_options + subtitle_options + format_options
 
         if twopass == 1:
             optlist.extend(['-pass', '1'])
