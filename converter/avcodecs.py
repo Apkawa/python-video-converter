@@ -355,15 +355,14 @@ class VideoCodec(BaseCodec):
                 "unsharp=%s" % ":".join("%s=%s" % p for p in safe["unsharp"].items())
             )
 
+        filters_list.extend(opt.get("extra_filters") or [])
+
         if filters or filters_list:
             extra_filters = ','.join(filters_list)
             if extra_filters:
                 filters = extra_filters if not filters else \
                     filters + ',' + extra_filters
 
-            extra_user_filters = ','.join(opt.get("extra_filters") or [])
-            if extra_user_filters:
-                filters += extra_user_filters
 
             optlist.extend(['-vf', filters])
 
