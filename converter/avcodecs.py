@@ -138,13 +138,13 @@ class SubtitleCodec(BaseCodec):
 
 
 def unsharpmask_type(value):
-    #https://www.ffmpeg.org/ffmpeg-filters.html#unsharp-1
+    # https://www.ffmpeg.org/ffmpeg-filters.html#unsharp-1
 
     clean_value = {
         'luma_msize_x': 5,
         'luma_msize_y': 5,
         'luma_amount': 1,
-        }
+    }
 
     if isinstance(value, float):
         clean_value['luma_amount'] = value
@@ -153,12 +153,10 @@ def unsharpmask_type(value):
     if not isinstance(value, dict):
         raise ValueError("not is dict!")
 
-
     for key in clean_value:
         if key in value:
             clean_value[key] = value[key]
     return clean_value
-
 
 
 class VideoCodec(BaseCodec):
@@ -357,12 +355,16 @@ class VideoCodec(BaseCodec):
                 "unsharp=%s" % ":".join("%s=%s" % p for p in safe["unsharp"].items())
             )
 
-
         if filters or filters_list:
             extra_filters = ','.join(filters_list)
             if extra_filters:
                 filters = extra_filters if not filters else \
                     filters + ',' + extra_filters
+
+            extra_user_filters = ','.join(opt.get("extra_filters") or [])
+            if extra_user_filters:
+                filters += extra_user_filters
+
             optlist.extend(['-vf', filters])
 
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
@@ -654,9 +656,11 @@ class PngCodec(VideoCodec):
     codec_name = 'png'
     ffmpeg_codec_name = 'png'
 
+
 class TiffCodec(VideoCodec):
     codec_name = 'tiff'
     ffmpeg_codec_name = 'tiff'
+
 
 # Subtitle Codecs
 class MOVTextCodec(SubtitleCodec):
